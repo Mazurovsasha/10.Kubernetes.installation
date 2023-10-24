@@ -1,0 +1,46 @@
+name: Check Pod Status
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *'  # Run every day at midnight UTC
+
+jobs:
+  check-pods:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check pod status
+        uses: azure/k8s-set-context@v1
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+          version: '1.21'
+
+      - name: Get pod status
+        run: |
+          POD_STATUS=$(kubectl get pods --all-namespaces --field-selector=status.phase!=Running --no-headers)
+          if [[ -n "$POD_STATUS" ]]; then
+            echo "$POD_STATUS" > failed_pods.txt
+            echo "::set-output name=has_failed_pods::true"
+          else
+            echo "::set-output name=has_failed_pods::false"
+          fi
+
+      - name: Send Slack notification
+        if: ${{ steps.get-pod-status.outputs.has_failed_pods == 'true' }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        with:
+          status: 'Failed Pods Alert'
+          color: 'danger'
+          channel: 'your-slack-channel'
+          fields: |
+            {{#cat ./failed_pods.txt}}
+            { "title": "Failed Pods", "value": "{{.}}", "short": false },
+            {{/cat}}
+
+
+
