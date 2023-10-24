@@ -10,6 +10,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Install SSHpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Set up SSH tunnel
+        run: sshpass -p ${{ secrets.BASTION_PASSWORD }} ssh -f -N -L 6443:${{ secrets.KUBERNETES_CLUSTER_IP }}:6443 ${{ secrets.BASTION_USERNAME }}@${{ secrets.BASTION_HOST }} -p ${{ secrets.BASTION_PORT }}
+
       - name: Check pod status
         uses: azure/k8s-set-context@v1
         with:
@@ -41,6 +47,3 @@ jobs:
             {{#cat ./failed_pods.txt}}
             { "title": "Failed Pods", "value": "{{.}}", "short": false },
             {{/cat}}
-
-
-
