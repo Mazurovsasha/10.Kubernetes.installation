@@ -1,4 +1,4 @@
-name: Check Pod Status
+name: Check Pod Status v11
 
 on:
   workflow_dispatch:
@@ -12,7 +12,7 @@ jobs:
     - name: Check Pod Status and Send Slack Notification
       env:
         HOST: ${{ secrets.HOST }}
-        BASTION_USER: ${{ secrets.BASTION_USERNAME }}
+        BASTION_USERNAME: ${{ secrets.BASTION_USERNAME }}
         BASTION_PORT: ${{ secrets.BASTION_PORT }}
         BASTION_HOST: ${{ secrets.BASTION_HOST }}
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
