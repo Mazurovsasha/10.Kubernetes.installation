@@ -1,4 +1,4 @@
-name: Check Pod Status v7
+name: Check Pod Status v8
 
 on:
   workflow_dispatch:
@@ -23,9 +23,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y sshpass
 
+      - name: Create SSH config
+        run: |
+          mkdir -p ~/.ssh
+          echo -e "Host kubernetes-bastion\n\tHostName $BASTION_HOST\n\tUser $BASTION_USERNAME\n\tPort $BASTION_PORT\n\tStrictHostKeyChecking no" > ~/.ssh/config
+
       - name: Set up SSH tunnel
         run: |
-          echo -e "Host kubernetes-bastion\n\tHostName $BASTION_HOST\n\tUser $BASTION_USERNAME\n\tPort $BASTION_PORT\n\tStrictHostKeyChecking no" > ~/.ssh/config
           sshpass -p "$BASTION_PASSWORD" ssh -o StrictHostKeyChecking=no -f -N -L 32510:$KUBERNETES_CLUSTER_IP:32510 kubernetes-bastion
 
       - name: Check pod status
@@ -51,6 +55,7 @@ jobs:
           channel: '10_kuber'
           fields: |
             { "title": "Failed Pods", "value": "$(cat failed_pods.txt)", "short": false }
+
 
 
 
