@@ -1,29 +1,29 @@
-name: Check Pod Status v11
-
+name: Check Pods and Notify in Slack
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '0 * * * *'  # Каждый час
 
 jobs:
-  check_pod_status:
+  check-pods-and-notify:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Check Pod Status and Send Slack Notification
+    - name: Check Pods Status
       env:
-        HOST: ${{ secrets.HOST }}
-        BASTION_USERNAME: ${{ secrets.BASTION_USERNAME }}
-        BASTION_PORT: ${{ secrets.BASTION_PORT }}
         BASTION_HOST: ${{ secrets.BASTION_HOST }}
+        BASTION_USERNAME: ${{ secrets.BASTION_USERNAME }}
+        BASTION_PASSWORD: ${{ secrets.BASTION_PASSWORD }}
+        CLUSTER_HOST: ${{ secrets.CLUSTER_HOST }}
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       run: |
-        ssh -J $BASTION_USERNAME@$BASTION_HOST:$BASTION_PORT $HOST:65535 'kubectl get pods' > pod_status.txt
-        if grep -q "Crash\|Error" pod_status.txt; then
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"Some pods have crashed or failed. Check Kubernetes cluster."}' $SLACK_WEBHOOK
-        fi
-
-
-
+        sshpass -p $BASTION_PASSWORD ssh -o "StrictHostKeyChecking=no" $BASTION_USERNAME@$BASTION_HOST "ssh $CLUSTER_HOST kubectl get pods"
+    
+    - name: Send Notification to Slack
+      if: ${{ failure() }}
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      run: |
+        curl -X POST -H 'Content-type: application/json' --data '{"text":"There is an issue with the pods."}' ${SLACK_WEBHOOK}
 
 
 
@@ -166,3 +166,31 @@ jobs:
 #             {{#cat ./failed_pods.txt}}
 #             { "title": "Failed Pods", "value": "{{.}}", "short": false },
 #             {{/cat}}
+
+
+
+
+
+# name: Check Pod Status v11
+
+# on:
+#   workflow_dispatch:
+#   schedule:
+#     - cron: '*/30 * * * *'
+
+# jobs:
+#   check_pod_status:
+#     runs-on: ubuntu-latest
+#     steps:
+#     - name: Check Pod Status and Send Slack Notification
+#       env:
+#         HOST: ${{ secrets.HOST }}
+#         BASTION_USERNAME: ${{ secrets.BASTION_USERNAME }}
+#         BASTION_PORT: ${{ secrets.BASTION_PORT }}
+#         BASTION_HOST: ${{ secrets.BASTION_HOST }}
+#         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+#       run: |
+#         ssh -J $BASTION_USERNAME@$BASTION_HOST:$BASTION_PORT $HOST:65535 'kubectl get pods' > pod_status.txt
+#         if grep -q "Crash\|Error" pod_status.txt; then
+#           curl -X POST -H 'Content-type: application/json' --data '{"text":"Some pods have crashed or failed. Check Kubernetes cluster."}' $SLACK_WEBHOOK
+#         fi
