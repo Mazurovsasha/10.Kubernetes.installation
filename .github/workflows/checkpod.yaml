@@ -1,5 +1,6 @@
 name: Check Pods and Notify in Slack
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 * * * *'  # Каждый час
 
