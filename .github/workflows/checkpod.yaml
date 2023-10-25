@@ -17,7 +17,7 @@ jobs:
         BASTION_HOST: ${{ secrets.BASTION_HOST }}
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
       run: |
-        ssh -J $BASTION_USERNAME@$BASTION_HOST:$BASTION_PORT $HOST 'kubectl get pods' > pod_status.txt
+        ssh -J $BASTION_USERNAME@$BASTION_HOST:$BASTION_PORT $HOST:65535 'kubectl get pods' > pod_status.txt
         if grep -q "Crash\|Error" pod_status.txt; then
           curl -X POST -H 'Content-type: application/json' --data '{"text":"Some pods have crashed or failed. Check Kubernetes cluster."}' $SLACK_WEBHOOK
         fi
