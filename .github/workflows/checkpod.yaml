@@ -1,4 +1,4 @@
-name: Check Pod Status
+name: Check Pod Status v6
 
 on:
   workflow_dispatch:
@@ -9,6 +9,14 @@ jobs:
   check-pods:
     runs-on: ubuntu-latest
 
+    env:
+      BASTION_PASSWORD: ${{ secrets.BASTION_PASSWORD }}
+      BASTION_USERNAME: ${{ secrets.BASTION_USERNAME }}
+      BASTION_HOST: ${{ secrets.BASTION_HOST }}
+      BASTION_PORT: ${{ secrets.BASTION_PORT }}
+      KUBECONFIG: ${{ secrets.KUBECONFIG }}
+      KUBE_CONTEXT: ${{ secrets.KUBE_CONTEXT }}
+
     steps:
       - name: Install SSHpass
         run: |
@@ -17,11 +25,11 @@ jobs:
 
       - name: Set up SSH tunnel
         run: |
-          sshpass -p "${{ secrets.BASTION_PASSWORD }}" ssh -o StrictHostKeyChecking=no -f -N -L 32510:${{ secrets.KUBERNETES_CLUSTER_IP }}:32510 ${{ secrets.BASTION_USERNAME }}@${{ secrets.BASTION_HOST }} -p ${{ secrets.BASTION_PORT }}
+          sshpass -p "$BASTION_PASSWORD" ssh -o StrictHostKeyChecking=no -f -N -L 32510:$KUBERNETES_CLUSTER_IP:32510 $BASTION_USERNAME@$BASTION_HOST -p $BASTION_PORT
 
       - name: Check pod status
         run: |
-          ssh -o StrictHostKeyChecking=no -p 32510 ${secrets.BASTION_USERNAME}@localhost "kubectl --kubeconfig=${secrets.KUBECONFIG} --context=${secrets.KUBE_CONTEXT} get pods --all-namespaces --field-selector=status.phase!=Running --no-headers" > failed_pods.txt
+          ssh -o StrictHostKeyChecking=no -p 32510 $BASTION_USERNAME@localhost "kubectl --kubeconfig=$KUBECONFIG --context=$KUBE_CONTEXT get pods --all-namespaces --field-selector=status.phase!=Running --no-headers" > failed_pods.txt
 
       - name: Get pod status
         run: |
