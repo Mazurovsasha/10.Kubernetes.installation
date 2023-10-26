@@ -11,12 +11,6 @@ jobs:
     env:
       SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 
-    defaults:
-      run:
-        shell: bash
-        env:
-          SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
-
     steps:
       - name: Connect to K8s host
         run: |
@@ -58,7 +52,6 @@ jobs:
             {{#cat ./failed_pods.txt}}
             { "title": "Failed Pods", "value": "{{.}}", "short": false },
             {{/cat}}
-
 
 
 
