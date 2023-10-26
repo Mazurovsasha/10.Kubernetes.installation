@@ -1,4 +1,4 @@
-name: Check Pod Status
+name: Check Pod Status v20
 
 on:
   workflow_dispatch:
@@ -20,6 +20,7 @@ jobs:
           ssh-add - <<< "${{ secrets.PRIVATE_KEY }}"
           ssh-keyscan -p 32510 ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
           ssh ${{ secrets.BASTION_USERNAME }}@${{ secrets.BASTION_HOST }} -p 32510 ssh-keyscan ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+          ssh -o ProxyCommand="ssh -W %h:%p ${{ secrets.BASTION_USERNAME }}@${{ secrets.BASTION_HOST }} -p 32510" ${{ secrets.HOST_USER }}@${{ secrets.HOST }}
 
       - name: Check pod status
         uses: azure/k8s-set-context@v1
