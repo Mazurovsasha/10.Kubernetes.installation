@@ -19,15 +19,14 @@ jobs:
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.HOST_USER }}
-        key: ${{ secrets.PRIVATE_KEY }}
+        # key: ${{ secrets.PRIVATE_KEY }}
         port: ${{ secrets.PORT }}
         proxy_host: ${{ secrets.BASTION_HOST }}
         proxy_username: ${{ secrets.BASTION_USERNAME }}
         proxy_key: ${{ secrets.PRIVATE_KEY }}
         proxy_port: ${{ secrets.BASTION_PORT }}
         script: |
-          mkdir abc/def
-          ls -al
+          "kubectl get pods -A" >> output.log
     - name: Check Crash pods
       id: check-pods
       run: |
