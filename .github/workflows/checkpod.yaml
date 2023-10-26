@@ -8,12 +8,21 @@ on:
 jobs:
   check-pods:
     runs-on: ubuntu-latest
+    env:
+      SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+    defaults:
+      run:
+        shell: bash
+        env:
+          SSH_AUTH_SOCK: ${{ env.SSH_AUTH_SOCK }}
 
     steps:
       - name: Connect to K8s host
         run: |
           mkdir ~/.ssh
-          eval ssh-agent -s
+          mkdir -p $(dirname $SSH_AUTH_SOCK)
+          eval "$(ssh-agent -a $SSH_AUTH_SOCK)"
           ssh-add - <<< "${{ secrets.PRIVATE_KEY }}"
           ssh-keyscan -p 32510 ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
           ssh ${{ secrets.BASTION_USERNAME }}@${{ secrets.BASTION_HOST }} -p 32510 ssh-keyscan ${{ secrets.HOST }} >> ~/.ssh/known_hosts
