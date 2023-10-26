@@ -14,6 +14,20 @@ jobs:
         ssh-keyscan -p 32510 ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
         ssh ${{ secrets.BASTION_USERNAME }}@${{ secrets.BASTION_HOST }} -p 32510 ssh-keyscan ${{ secrets.HOST }} >> ~/.ssh/known_hosts
         ssh -o ProxyCommand="ssh -W %h:%p ${{ secrets.BASTION_USERNAME }}@${{ secrets.BASTION_HOST }} -p 32510" ${{ secrets.HOST_USER }}@${{ secrets.HOST }} "kubectl get pods -A" >> output.log
+    # - name: ssh proxy command
+    #   uses: appleboy/ssh-action@v1.0.0
+    #   with:
+    #     host: ${{ secrets.HOST }}
+    #     username: ${{ secrets.HOST_USER }}
+    #     key: ${{ secrets.KEY }}
+    #     port: ${{ secrets.PORT }}
+    #     proxy_host: ${{ secrets.PROXY_HOST }}
+    #     proxy_username: ${{ secrets.PROXY_USERNAME }}
+    #     proxy_key: ${{ secrets.PROXY_KEY }}
+    #     proxy_port: ${{ secrets.PROXY_PORT }}
+    #     script: |
+    #       mkdir abc/def
+    #       ls -al
     - name: Check Crash pods
       id: check-pods
       run: |
