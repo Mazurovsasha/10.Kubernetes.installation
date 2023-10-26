@@ -1,31 +1,110 @@
-name: Check Pods and Notify in Slack
+name: Check Pod Status
+
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 * * * *'  # Каждый час
+    - cron: '*/30 * * * *'  # Run every day at midnight UTC
 
 jobs:
-  check-pods-and-notify:
+  check-pods:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Check Pods Status
-      env:
-        BASTION_HOST: ${{ secrets.BASTION_HOST }}
-        BASTION_USERNAME: ${{ secrets.BASTION_USERNAME }}
-        BASTION_PASSWORD: ${{ secrets.BASTION_PASSWORD }}
-        CLUSTER_HOST: ${{ secrets.CLUSTER_HOST }}
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-      run: |
-        sshpass -p $BASTION_PASSWORD ssh -o "StrictHostKeyChecking=no" $BASTION_USERNAME@$BASTION_HOST "ssh $CLUSTER_HOST kubectl get pods"
-    
-    - name: Send Notification to Slack
-      if: ${{ failure() }}
-      env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-      run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"There is an issue with the pods."}' ${SLACK_WEBHOOK}
+      - name: Connect to K8s host
+        run: |
+          mkdir ~/.ssh
+          eval ssh-agent -s
+          ssh-add - <<< "${{ secrets.PRIVATE_KEY }}"
+          ssh-keyscan -p 32510 ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
+          ssh ${{ secrets.BASTION_USERNAME }}@${{ secrets.BASTION_HOST }} -p 32510 ssh-keyscan ${{ secrets.HOST }} >> ~/.ssh/known_hosts
 
+      - name: Check pod status
+        uses: azure/k8s-set-context@v1
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+          context: ${{ secrets.KUBE_CONTEXT }}
+          version: '1.21'
+
+      - name: Get pod status
+        run: |
+          POD_STATUS=$(kubectl get pods --all-namespaces --field-selector=status.phase!=Running --no-headers)
+          if [[ -n "$POD_STATUS" ]]; then
+            echo "$POD_STATUS" > failed_pods.txt
+            echo "::set-output name=has_failed_pods::true"
+          else
+            echo "::set-output name=has_failed_pods::false"
+          fi
+
+      - name: Send Slack notification
+        if: ${{ steps.get-pod-status.outputs.has_failed_pods == 'true' }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        with:
+          status: 'Failed Pods Alert'
+          color: 'danger'
+          channel: '10_kuber'
+          fields: |
+            {{#cat ./failed_pods.txt}}
+            { "title": "Failed Pods", "value": "{{.}}", "short": false },
+            {{/cat}}
+
+
+
+
+
+
+
+# name: Check Pod Status
+
+# on:
+#   workflow_dispatch:
+#   schedule:
+#     - cron: '*/30 * * * *'  # Run every day at midnight UTC
+
+# jobs:
+#   check-pods:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Install SSHpass
+#         run: sudo apt-get update && sudo apt-get install -y sshpass
+
+#       - name: Set up SSH tunnel
+#         run: sshpass -p ${{ secrets.BASTION_PASSWORD }} ssh -f -N -L 32510:${{ secrets.KUBERNETES_CLUSTER_IP }}:32510 ${{ secrets.BASTION_USERNAME }}@${{ secrets.BASTION_HOST }} -p ${{ secrets.BASTION_PORT }}
+
+#       - name: Check pod status
+#         uses: azure/k8s-set-context@v1
+#         with:
+#           method: kubeconfig
+#           kubeconfig: ${{ secrets.KUBECONFIG }}
+#           context: ${{ secrets.KUBE_CONTEXT }}
+#           version: '1.21'
+
+#       - name: Get pod status
+#         run: |
+#           POD_STATUS=$(kubectl get pods --all-namespaces --field-selector=status.phase!=Running --no-headers)
+#           if [[ -n "$POD_STATUS" ]]; then
+#             echo "$POD_STATUS" > failed_pods.txt
+#             echo "::set-output name=has_failed_pods::true"
+#           else
+#             echo "::set-output name=has_failed_pods::false"
+#           fi
+
+#       - name: Send Slack notification
+#         if: ${{ steps.get-pod-status.outputs.has_failed_pods == 'true' }}
+#         uses: rtCamp/action-slack-notify@v2
+#         env:
+#           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+#         with:
+#           status: 'Failed Pods Alert'
+#           color: 'danger'
+#           channel: '10_kuber'
+#           fields: |
+#             {{#cat ./failed_pods.txt}}
+#             { "title": "Failed Pods", "value": "{{.}}", "short": false },
+#             {{/cat}}
 
 
 
@@ -118,55 +197,6 @@ jobs:
 
 
 
-# name: Check Pod Status
-
-# on:
-#   workflow_dispatch:
-#   schedule:
-#     - cron: '*/30 * * * *'  # Run every day at midnight UTC
-
-# jobs:
-#   check-pods:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: Install SSHpass
-#         run: sudo apt-get update && sudo apt-get install -y sshpass
-
-#       - name: Set up SSH tunnel
-#         run: sshpass -p ${{ secrets.BASTION_PASSWORD }} ssh -f -N -L 32510:${{ secrets.KUBERNETES_CLUSTER_IP }}:32510 ${{ secrets.BASTION_USERNAME }}@${{ secrets.BASTION_HOST }} -p ${{ secrets.BASTION_PORT }}
-
-#       - name: Check pod status
-#         uses: azure/k8s-set-context@v1
-#         with:
-#           method: kubeconfig
-#           kubeconfig: ${{ secrets.KUBECONFIG }}
-#           context: ${{ secrets.KUBE_CONTEXT }}
-#           version: '1.21'
-
-#       - name: Get pod status
-#         run: |
-#           POD_STATUS=$(kubectl get pods --all-namespaces --field-selector=status.phase!=Running --no-headers)
-#           if [[ -n "$POD_STATUS" ]]; then
-#             echo "$POD_STATUS" > failed_pods.txt
-#             echo "::set-output name=has_failed_pods::true"
-#           else
-#             echo "::set-output name=has_failed_pods::false"
-#           fi
-
-#       - name: Send Slack notification
-#         if: ${{ steps.get-pod-status.outputs.has_failed_pods == 'true' }}
-#         uses: rtCamp/action-slack-notify@v2
-#         env:
-#           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-#         with:
-#           status: 'Failed Pods Alert'
-#           color: 'danger'
-#           channel: '10_kuber'
-#           fields: |
-#             {{#cat ./failed_pods.txt}}
-#             { "title": "Failed Pods", "value": "{{.}}", "short": false },
-#             {{/cat}}
 
 
 
