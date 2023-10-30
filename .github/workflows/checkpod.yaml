@@ -36,13 +36,13 @@ jobs:
     - name: Check Crash pods
       id: check-pods
       run: |
-        echo "pods-failed=$(cat output.log | grep -v 'Running\|Completed ' | wc -l)"
+        echo "pods-failed=$(cat output.log | grep -v 'Running\|Completed ' | wc -l)" >> $GITHUB_OUTPUT
     - name: Upload Crashed Pods List
       if: steps.check-pods.outputs.pods-failed != 1
       uses: actions/upload-artifact@v3
       with:
-        # path: $GITHUB_OUTPUT/output.log
-        path: $GITHUB_WORKSPACE/output.log
+        path: output.log
+        
 
     - name: Slack notification
       uses: rtCamp/action-slack-notify@v2
