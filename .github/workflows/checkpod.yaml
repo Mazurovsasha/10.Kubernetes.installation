@@ -28,15 +28,15 @@ jobs:
         proxy_port: ${{ secrets.BASTION_PORT }}
         script: |
           kubectl get pods -A >> output.log
-          cat output.log > $GITHUB_OUTPUT
-    # - name: Check output.log file
-    #   run: |
-    #     ls -la
-    #     cat output.log
+          cat output.log >> $GITHUB_OUTPUT/output.log
+    - name: Check output.log file
+      run: |
+        ls -la
+        cat output.log
     - name: Check Crash pods
       id: check-pods
       run: |
-        echo "pods-failed=$(cat output.log | grep -v 'Running\|Completed ' | wc -l)" > $GITHUB_OUTPUT
+        echo "pods-failed=$(cat output.log | grep -v 'Running\|Completed ' | wc -l)" >> $GITHUB_OUTPUT/output.log
     - name: Upload Crashed Pods List
       if: steps.check-pods.outputs.pods-failed != 1
       uses: actions/upload-artifact@v3
