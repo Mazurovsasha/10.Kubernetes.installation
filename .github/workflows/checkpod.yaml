@@ -29,6 +29,7 @@ jobs:
         script: |
           kubectl get pods -A >> output.log
           cat output.log >> $GITHUB_OUTPUT/output.log
+          ls -la
     - name: Check output.log file
       run: |
         ls -la
