@@ -27,7 +27,7 @@ jobs:
         proxy_key: ${{ secrets.PROXY_KEY }}
         proxy_port: ${{ secrets.BASTION_PORT }}
         script: |
-          "kubectl get pods -A" >> output.log
+          kubectl get pods -A >> output.log
     - name: Check Crash pods
       id: check-pods
       run: |
