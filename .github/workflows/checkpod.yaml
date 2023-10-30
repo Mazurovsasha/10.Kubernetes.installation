@@ -28,6 +28,10 @@ jobs:
         proxy_port: ${{ secrets.BASTION_PORT }}
         script: |
           kubectl get pods -A >> output.log
+    - name: Check output.log file
+      run: |
+        ls -la
+        cat output.log
     - name: Check Crash pods
       id: check-pods
       run: |
