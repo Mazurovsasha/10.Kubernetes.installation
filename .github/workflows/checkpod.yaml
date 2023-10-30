@@ -27,7 +27,7 @@ jobs:
         proxy_key: ${{ secrets.PROXY_KEY }}
         proxy_port: ${{ secrets.BASTION_PORT }}
         script: |
-          kubectl get pods -A >> output.log && >> $GITHUB_OUTPUT/output.log
+          kubectl get pods -A >> output.log && cat output.log >> $GITHUB_OUTPUT
           cat output.log
     # - name: Check output.log file
     #   run: |
@@ -41,7 +41,8 @@ jobs:
       if: steps.check-pods.outputs.pods-failed != 1
       uses: actions/upload-artifact@v3
       with:
-        path: $GITHUB_OUTPUT/output.log
+        # path: $GITHUB_OUTPUT/output.log
+        path: $GITHUB_WORKSPACE/output.log
 
     - name: Slack notification
       uses: rtCamp/action-slack-notify@v2
