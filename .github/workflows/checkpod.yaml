@@ -38,7 +38,7 @@ jobs:
       uses: rtCamp/action-slack-notify@v2
       if: steps.check-pods.outputs.pods-failed == 1
       env:
-        SLACK_CHANNEL: '10_kuber'
+        SLACK_CHANNEL: 'general'
         SLACK_ICON: https://github.com/rtCamp.png?size=48
         SLACK_COLOR: ${{ job.status }}
         SLACK_USERNAME: rtBot
