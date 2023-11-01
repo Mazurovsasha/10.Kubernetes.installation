@@ -40,8 +40,8 @@ jobs:
       env:
         SLACK_CHANNEL: '10_kuber'
         SLACK_ICON: https://github.com/rtCamp.png?size=48
-        SLACK_COLOR: 'red'
-        SLACK_USERNAME: 'Alex'
+        SLACK_COLOR: ${{ job.status }}
+        SLACK_USERNAME: rtBot
         SLACK_TITLE: "Failed Pods Alert"
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
