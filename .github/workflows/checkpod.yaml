@@ -30,31 +30,63 @@ jobs:
           kubectl get pods -A >> output.log
           cat output.log >> $GITHUB_OUTPUT/output.log
           ls -la
-    - name: Check output.log file
-      run: |
-        ls -la
-        cat output.log
-    - name: Check Crash pods
-      id: check-pods
-      run: |
-        echo "pods-failed=$(cat output.log | grep -v 'Running\|Completed ' | wc -l)" >> $GITHUB_OUTPUT/output.log
-    - name: Upload Crashed Pods List
-      if: steps.check-pods.outputs.pods-failed != 1
-      uses: actions/upload-artifact@v3
+    - name: Check pod status
+      uses: azure/k8s-set-context@v1
       with:
-        path: output.log
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBECONFIG }}
+        context: ${{ secrets.KUBE_CONTEXT }}
+        version: '1.21'
+        
+    - name: Get pod status
+      run: |
+        POD_STATUS=$(kubectl get pods --all-namespaces --field-selector=status.phase!=Running --no-headers)
+        if [[ -n "$POD_STATUS" ]]; then
+          echo "$POD_STATUS" > failed_pods.txt
+          echo "::set-output name=has_failed_pods::true"
+        else
+          echo "::set-output name=has_failed_pods::false"
+        fi
+    
+    - name: Send Slack notification
+      if: ${{ steps.get-pod-status.outputs.has_failed_pods == 'true' }}
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      with:
+        status: 'Failed Pods Alert'
+        color: 'danger'
+        channel: '10_kuber'
+        fields: |
+          {{#cat ./failed_pods.txt}}
+          { "title": "Failed Pods", "value": "{{.}}", "short": false },
+          {{/cat}}
+    
+    # - name: Check output.log file
+    #   run: |
+    #     ls -la
+    #     cat $GITHUB_OUTPUT/output.log
+    # - name: Check Crash pods
+    #   id: check-pods
+    #   run: |
+    #     echo "pods-failed=$(cat output.log | grep -v 'Running\|Completed ' | wc -l)" >> $GITHUB_OUTPUT/output.log
+    # - name: Upload Crashed Pods List
+    #   if: steps.check-pods.outputs.pods-failed != 1
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     path: output.log
         
 
-    - name: Slack notification
-      uses: rtCamp/action-slack-notify@v2
-      if: steps.check-pods.outputs.pods-failed != 1
-      env:
-        SLACK_CHANNEL: 10_kuber
-        SLACK_ICON: https://github.com/rtCamp.png?size=48
-        SLACK_COLOR: 'red'
-        SLACK_USERNAME: Alex
-        SLACK_TITLE: "Failed Pods Alert"
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+    # - name: Slack notification
+    #   uses: rtCamp/action-slack-notify@v2
+    #   if: steps.check-pods.outputs.pods-failed != 1
+    #   env:
+    #     SLACK_CHANNEL: 10_kuber
+    #     SLACK_ICON: https://github.com/rtCamp.png?size=48
+    #     SLACK_COLOR: 'red'
+    #     SLACK_USERNAME: Alex
+    #     SLACK_TITLE: "Failed Pods Alert"
+    #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
 
 
