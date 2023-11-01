@@ -21,12 +21,12 @@ jobs:
         proxy_port: ${{ secrets.BASTION_PORT }}
         script: |
           kubectl get pods -A >> output.log
-          echo "::set-output name=output-log::$(cat output.log)"
+          echo "::set-output name=output_log::$(cat output.log)"
     - name: Check Crash pods
       id: check-pods
       run: |
-        step.p_c.outputs.output-log > output.log
-        echo "pods-failed=$(cat output.log | grep -v 'Running\|Completed ' | wc -l)" >> $GITHUB_OUTPUT
+        step.p_c.outputs.output_log > output.log
+        echo "pods-failed=$(cat output.log | grep -v 'Running\|Completed ' | wc -l)" >> $GITHUB_OUTPUT/output.log
     - name: Upload Crashed Pods List
       if: steps.check-pods.outputs.pods-failed != 1
       uses: actions/upload-artifact@v3
