@@ -25,7 +25,7 @@ jobs:
     - name: Check Crash pods
       id: check-pods
       run: |
-        echo "pods-failed=$(step.p_c.outputs.output-log | grep -v 'Running\|Completed ' | wc -l)" >> $GITHUB_OUTPUT
+        echo "pods-failed=$(cat step.p_c.outputs.output-log | grep -v 'Running\|Completed ' | wc -l)" >> "$GITHUB_OUTPUT"
     - name: Upload Crashed Pods List
       if: steps.check-pods.outputs.pods-failed != 1
       uses: actions/upload-artifact@v3
