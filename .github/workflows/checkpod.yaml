@@ -38,10 +38,10 @@ jobs:
       uses: rtCamp/action-slack-notify@v2
       if: steps.check-pods.outputs.pods-failed == 1
       env:
-        SLACK_CHANNEL: 10_kuber
+        SLACK_CHANNEL: '10_kuber'
         SLACK_ICON: https://github.com/rtCamp.png?size=48
         SLACK_COLOR: 'red'
-        SLACK_USERNAME: Alex
+        SLACK_USERNAME: 'Alex'
         SLACK_TITLE: "Failed Pods Alert"
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
 
