@@ -6,14 +6,6 @@ jobs:
   check-pods:
     runs-on: ubuntu-latest
     steps:
-    # - name: Connect to K8s
-    #   run: |
-    #     mkdir ~/.ssh
-    #     eval `ssh-agent -s`
-    #     ssh-add - <<< "${{ secrets.PRIVATE_KEY }}"
-    #     ssh-keyscan -p 32510 ${{ secrets.BASTION_HOST }} >> ~/.ssh/known_hosts
-    #     ssh ${{ secrets.BASTION_USERNAME }}@${{ secrets.BASTION_HOST }} -p 32510 ssh-keyscan ${{ secrets.HOST }} >> ~/.ssh/known_hosts
-    #     ssh -o ProxyCommand="ssh -W %h:%p ${{ secrets.BASTION_USERNAME }}@${{ secrets.BASTION_HOST }} -p 32510" ${{ secrets.HOST_USER }}@${{ secrets.HOST }} "kubectl get pods -A" >> output.log
     - name: ssh proxy command
       id: p_c
       uses: appleboy/ssh-action@v1.0.0
@@ -29,11 +21,11 @@ jobs:
         proxy_port: ${{ secrets.BASTION_PORT }}
         script: |
           kubectl get pods -A >> output.log
-          echo "::set-output name=output_log::$(cat output.log)"
+          echo "::set-output name=output-log::$(cat output.log)"
     - name: Check Crash pods
       id: check-pods
       run: |
-        echo "pods-failed=$(step.p_c.outputs.output_log | grep -v 'Running\|Completed ' | wc -l)"
+        echo "pods-failed=$(step.p_c.outputs.output-log | grep -v 'Running\|Completed ' | wc -l)" >> $GITHUB_OUTPUT
     - name: Upload Crashed Pods List
       if: steps.check-pods.outputs.pods-failed != 1
       uses: actions/upload-artifact@v3
