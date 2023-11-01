@@ -21,7 +21,7 @@ jobs:
         proxy_port: ${{ secrets.BASTION_PORT }}
         script: |
           kubectl get pods -A >> output.log
-          echo "::set-output name=output_log::$(cat output.log)" >> $GITHUB_OUTPUT
+          echo "::set-output name=output_log::$(cat output.log)"
     - name: Check Crash pods
       id: check-pods
       run: |
